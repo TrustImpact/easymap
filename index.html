@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Map with Multiline Postcode Input</title>
+    <style>
+        #map { height: 400px; }
+        }
+        #header {
+            width: 100%;
+            background-color: #FFFFFF;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #header img {
+            height: 100px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+
+<div id="header">
+    <img src="https://www.trustimpact.com/wp-content/uploads/2020/09/trust-impact-logo.png" alt="Trust Impact Logo">
+</div>
+
+
+<div id="map"></div>
+<br>
+<form id="postcodeForm">
+    <textarea id="postcodeInput" placeholder="Enter postcodes, each on a new line" rows="5"></textarea>
+    <button type="submit">Add Markers</button>
+</form>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        maxZoom: 18,
+    }).addTo(map);
+
+    function addMarker(lat, lon, popupText) {
+        L.marker([lat, lon]).addTo(map)
+            .bindPopup(popupText)
+            .openPopup();
+    }
+
+    document.getElementById('postcodeForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var postcodes = document.getElementById('postcodeInput').value.split(/\r?\n/);
+        postcodes.forEach(function(postcode) {
+            postcode = postcode.trim();
+            if(postcode) {
+                var geocodingApiUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${postcode}`;
+
+                fetch(geocodingApiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.length > 0) {
+                            var lat = data[0].lat;
+                            var lon = data[0].lon;
+                            addMarker(lat, lon, `Location: ${postcode}`);
+                        } else {
+                            alert('Location not found for postcode: ' + postcode);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching location for postcode: ' + postcode, error);
+                        alert('Error fetching location for postcode: ' + postcode);
+                    });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
