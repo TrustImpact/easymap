@@ -10,7 +10,8 @@
             height: 400px;
         }
     </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@6.6.1/ol.css">
+    <!-- Correct OpenLayers CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v6.14.1/ol.css" />
 </head>
 <body>
     <div id="map"></div>
@@ -19,7 +20,8 @@
         <button type="submit">Add Markers</button>
     </form>
 
-    <script src="https://cdn.jsdelivr.net/npm/ol@6.6.1/dist/ol.js"></script>
+    <!-- Correct OpenLayers CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ol@v6.14.1/dist/ol.js"></script>
     <script>
         // Initialize the map
         var map = new ol.Map({
@@ -50,7 +52,6 @@
             var postcodes = document.getElementById('postcodeInput').value.split(/\r?\n/);
 
             postcodes.forEach(function(postcode) {
-                // Use a geocoding service to get lat/lon for postcodes, e.g., OpenCage or Nominatim API
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${postcode}`)
                     .then(response => response.json())
                     .then(data => {
