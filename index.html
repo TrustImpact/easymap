@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenLayers Map</title>
+    <title>OpenLayers Map with OpenCage Geocoding</title>
     <style>
         #map {
             width: 100%;
             height: 400px;
         }
     </style>
-    <!-- Correct OpenLayers CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.1.0/ol.css">
 </head>
 <body>
@@ -20,7 +19,6 @@
         <button type="submit">Add Markers</button>
     </form>
 
-    <!-- Correct OpenLayers CDN -->
     <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
     <script>
         // Initialize the map
@@ -52,12 +50,13 @@
             var postcodes = document.getElementById('postcodeInput').value.split(/\r?\n/);
 
             postcodes.forEach(function(postcode) {
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${postcode}`)
+                // Replace Nominatim with OpenCage Geocoding API
+                fetch(`https://api.opencagedata.com/geocode/v1/json?q=${postcode}&key=0fa315c939ca4836b78520deac87bdae`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.length > 0) {
-                            var lat = parseFloat(data[0].lat);
-                            var lon = parseFloat(data[0].lon);
+                        if (data.results.length > 0) {
+                            var lat = parseFloat(data.results[0].geometry.lat);
+                            var lon = parseFloat(data.results[0].geometry.lng);
                             addMarker(lat, lon, `Location: ${postcode}`);
                         } else {
                             alert('Postcode not found: ' + postcode);
