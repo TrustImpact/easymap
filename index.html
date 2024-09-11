@@ -1,118 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Interactive Map with Google Maps and Multiline Postcode Input</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLayers Map</title>
     <style>
-        #map { 
-            height: 400px; 
+        #map {
             width: 100%;
-        }
-        #header {
-            width: 100%;
-            background-color: #FFFFFF;
-            padding: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        #header img {
-            height: 100px;
+            height: 400px;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.6.1/css/ol.css">
 </head>
 <body>
+    <div id="map"></div>
+    <form id="postcodeForm">
+        <textarea id="postcodeInput" placeholder="Enter postcodes, each on a new line" rows="5"></textarea>
+        <button type="submit">Add Markers</button>
+    </form>
 
-<div id="header">
-    <img src="https://www.trustimpact.com/wp-content/uploads/2020/09/trust-impact-logo.png" alt="Trust Impact Logo">
-</div>
-
-<div id="map"></div>
-<br>
-<form id="postcodeForm">
-    <textarea id="postcodeInput" placeholder="Enter postcodes, each on a new line" rows="5"></textarea>
-    <button type="submit">Add Markers</button>
-</form>
-
-<!-- Google Maps API Script -->
-<script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyANQyKqd2zcM_0jHSFmVz7CgGYsdWvDm0s&callback=initMap">
-</script>
-
-<script>
-    var map;
-    var geocoder;
-
-    function initMap() {
-        // Initialize the map centered at a default location
-        map = new google.maps.Map(document.getElementById('map'), {
-            center: {lat: 51.505, lng: -0.09}, // Default location (can be changed)
-            zoom: 13
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.6.1/build/ol.js"></script>
+    <script>
+        // Initialize the map
+        var map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([0, 0]), // Default center (longitude, latitude)
+                zoom: 2
+            })
         });
 
-        // Initialize the geocoder
-        geocoder = new google.maps.Geocoder();
-    }
-
-    function addMarker(lat, lng, postcode) {
-        var latLng = new google.maps.LatLng(lat, lng);
-        var marker = new google.maps.Marker({
-            position: latLng,
-            map: map,
-            title: postcode
-        });
-
-        var infowindow = new google.maps.InfoWindow({
-            content: `Location: ${postcode}`
-        });
-
-        marker.addListener('click', function() {
-            infowindow.open(map, marker);
-        });
-    }
-
-    function geocodePostcode(postcode, retries = 3) {
-        geocoder.geocode({ 'address': postcode }, function(results, status) {
-            if (status === 'OK') {
-                var lat = results[0].geometry.location.lat();
-                var lng = results[0].geometry.location.lng();
-                addMarker(lat, lng, postcode);
-                map.setCenter({lat: lat, lng: lng}); // Center the map on the last valid location
-            } else if (status === 'OVER_QUERY_LIMIT' && retries > 0) {
-                // Retry if API query limit is reached
-                setTimeout(function() {
-                    geocodePostcode(postcode, retries - 1);
-                }, 1000); // Retry after 1 second
-            } else {
-                alert('Geocode was not successful for the following reason: ' + status);
-            }
-        });
-    }
-
-    document.getElementById('postcodeForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        var postcodes = document.getElementById('postcodeInput').value.split(/\r?\n/);
-        var submitButton = document.querySelector('button[type="submit"]');
-        
-        // Check for empty input
-        if (postcodes.length === 0 || postcodes.every(p => p.trim() === "")) {
-            alert("Please enter at least one postcode.");
-            return;
+        function addMarker(lat, lon, popupText) {
+            var marker = new ol.Overlay({
+                position: ol.proj.fromLonLat([lon, lat]),
+                element: document.createElement('div'),
+                positioning: 'center-center'
+            });
+            marker.getElement().innerHTML = '<img src="https://openlayers.org/en/latest/examples/data/icon.png" alt="Marker">';
+            map.addOverlay(marker);
         }
 
-        submitButton.disabled = true; 
-        
-        postcodes.forEach(function(postcode, index) {
-            setTimeout(function() {
-                postcode = postcode.trim();
-                if(postcode) {
-                    geocodePostcode(postcode);  // Call geocode function for each postcode
-                }
-                if (index === postcodes.length - 1) {
-                    submitButton.disabled = false;
-                }
-            }, index * 1000); // Delay each request by 1 second to avoid rate limiting
-        });
-    });
-</script>
+        document.getElementById('postcodeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var postcodes = document.getElementById('postcodeInput').value.split(/\r?\n/);
 
+            postcodes.forEach(function(postcode) {
+                // Use a geocoding service to get lat/lon for postcodes, e.g., OpenCage or Nominatim API
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${postcode}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            var lat = parseFloat(data[0].lat);
+                            var lon = parseFloat(data[0].lon);
+                            addMarker(lat, lon, `Location: ${postcode}`);
+                        } else {
+                            alert('Postcode not found: ' + postcode);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching location:', error);
+                    });
+            });
+        });
+    </script>
 </body>
 </html>
